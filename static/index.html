@@ -1,1 +1,268 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Emotion Detection</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap');
 
+    body {
+      margin: 0;
+      height: 100vh;
+      font-family: 'Poppins', sans-serif;
+      background: linear-gradient(135deg, #74ABE2, #5563DE, #8E54E9);
+      background-size: 300% 300%;
+      animation: gradientMove 10s ease infinite;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      transition: background 1s ease;
+    }
+
+    @keyframes gradientMove {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+
+    .card {
+      background: rgba(255, 255, 255, 0.15);
+      backdrop-filter: blur(12px);
+      border-radius: 20px;
+      box-shadow: 0 8px 25px rgba(0,0,0,0.2);
+      width: 90%;
+      max-width: 550px;
+      padding: 30px;
+      color: white;
+      text-align: center;
+      animation: fadeIn 1.5s ease;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(-10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    h1 {
+      font-size: 2rem;
+      margin-bottom: 20px;
+      font-weight: 600;
+    }
+
+    textarea {
+      width: 500px;
+      height: 120px;
+      border-radius: 12px;
+      border: none;
+      padding: 12px;
+      font-size: 1rem;
+      outline: none;
+      resize: none;
+      color: #333;
+    }
+
+    button {
+      background-color: #6C63FF;
+      color: white;
+      border: none;
+      border-radius: 12px;
+      padding: 12px 30px;
+      margin-top: 20px;
+      font-size: 1rem;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+
+    button:hover {
+      background-color: #5A52E0;
+      transform: scale(1.05);
+    }
+
+    .result {
+      margin-top: 25px;
+      font-size: 1.3rem;
+      font-weight: 600;
+      color: #FFD166;
+      opacity: 0;
+      transition: opacity 0.5s ease;
+    }
+
+    .visible {
+      opacity: 1;
+    }
+
+    canvas {
+      margin-top: 25px;
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 15px;
+      box-shadow: 0 0 20px rgba(255, 255, 255, 0.1);
+      padding: 10px;
+    }
+
+    .chart-toggle {
+      margin-top: 15px;
+      background-color: #FFD166;
+      color: #333;
+      border: none;
+      border-radius: 10px;
+      padding: 8px 20px;
+      cursor: pointer;
+      font-weight: 600;
+      transition: all 0.3s ease;
+    }
+
+    .chart-toggle:hover {
+      background-color: #FFCA3A;
+      transform: scale(1.05);
+    }
+  </style>
+</head>
+
+<body>
+  <div class="card">
+    <h1>Emotion Detection 💬</h1>
+    <p>Enter your text below and discover the emotion behind it!</p>
+
+    <textarea id="textInput" placeholder="Type your thoughts here..."></textarea>
+    <br />
+    <button onclick="predictEmotion()">Predict Emotion</button>
+    <button class="chart-toggle" onclick="toggleChartType()">Toggle Chart Type</button>
+
+    <div id="result" class="result"></div>
+    <canvas id="emotionChart" width="400" height="250"></canvas>
+  </div>
+
+  <script>
+    let chart = null;
+    let currentChartType = "pie";
+
+    async function predictEmotion() {
+      const text = document.getElementById("textInput").value.trim();
+      const resultDiv = document.getElementById("result");
+      const ctx = document.getElementById("emotionChart").getContext("2d");
+
+      if (!text) {
+        resultDiv.textContent = "Please enter some text!";
+        resultDiv.classList.add("visible");
+        return;
+      }
+
+      resultDiv.textContent = "Analyzing...";
+      resultDiv.classList.add("visible");
+
+      const response = await fetch("/predict", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text })
+      });
+
+      const data = await response.json();
+      const emotion = data.emotion;
+      const probs = data.probabilities;
+
+      // 🎨 Dynamic colors and emojis
+      const colors = {
+        joy: "#FFD166",
+        happiness: "#FFE156",
+        sadness: "#4ECDC4",
+        sorrow: "#0077B6",
+        anger: "#FF4D4D",
+        fear: "#7209B7",
+        surprise: "#F72585",
+        neutral: "#8D99AE"
+      };
+
+      const emojis = {
+        joy: "😄",
+        happiness: "😊",
+        sadness: "😢",
+        sorrow: "😭",
+        anger: "😡",
+        fear: "😱",
+        surprise: "😲",
+        neutral: "😐"
+      };
+
+      const bgColor = colors[emotion.toLowerCase()] || "#6C63FF";
+      document.body.style.background = `linear-gradient(135deg, ${bgColor}, #2D2A8C)`;
+      document.body.style.transition = "background 1s ease";
+
+      resultDiv.innerHTML = `${emojis[emotion.toLowerCase()] || "💬"} Predicted Emotion: <span style="font-weight:bold; color:#FFD166;">${emotion.toUpperCase()}</span>`;
+
+      // 🥧 Chart.js setup
+      const labels = Object.keys(probs);
+      const values = Object.values(probs);
+
+      const emotionColors = {
+        joy: "#FFD166",
+        happiness: "#FFB347",
+        sadness: "#4ECDC4",
+        sorrow: "#0077B6",
+        anger: "#FF4D4D",
+        fear: "#7209B7",
+        surprise: "#F72585",
+        neutral: "#8D99AE"
+      };
+
+      const backgroundColors = labels.map(label => emotionColors[label.toLowerCase()] || "#6C63FF");
+
+      if (chart) chart.destroy();
+
+      chart = new Chart(ctx, {
+        type: currentChartType,
+        data: {
+          labels: labels,
+          datasets: [{
+            label: "Emotion Probabilities",
+            data: values,
+            backgroundColor: backgroundColors,
+            borderColor: "#fff",
+            borderWidth: 2
+          }]
+        },
+        options: {
+          responsive: true,
+          plugins: {
+            legend: {
+              position: "right",
+              labels: { color: "#ffffff", font: { size: 14, weight: "bold" } }
+            },
+            title: {
+              display: true,
+              text: "Model Confidence Across Emotions",
+              color: "#ffffff",
+              font: { size: 18, weight: "bold" }
+            },
+            tooltip: {
+              backgroundColor: "rgba(0,0,0,0.8)",
+              titleColor: "#FFD166",
+              bodyColor: "#fff"
+            }
+          },
+          scales: currentChartType === "bar" ? {
+            y: {
+              beginAtZero: true,
+              max: 1,
+              ticks: { color: "#fff" },
+              grid: { color: "rgba(255,255,255,0.2)" }
+            },
+            x: {
+              ticks: { color: "#fff" },
+              grid: { color: "rgba(255,255,255,0.2)" }
+            }
+          } : {}
+        }
+      });
+    }
+
+    function toggleChartType() {
+      currentChartType = currentChartType === "pie" ? "bar" : "pie";
+      if (chart) {
+        predictEmotion(); // re-run with new chart type
+      }
+    }
+  </script>
+</body>
+</html>
