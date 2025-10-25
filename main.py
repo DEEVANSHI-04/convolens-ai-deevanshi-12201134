@@ -1,35 +1,3 @@
-# from fastapi import FastAPI, Request
-# from fastapi.staticfiles import StaticFiles
-# from fastapi.responses import HTMLResponse, FileResponse
-# from pydantic import BaseModel
-# import pickle
-# import os
-
-# # Load the model
-# with open("Stored_model.pkl", "rb") as f:
-#     model = pickle.load(f)
-
-# # Initialize FastAPI app
-# app = FastAPI(title="Emotion Detection App")
-
-# # Mount static files
-# app.mount("/static", StaticFiles(directory="static"), name="static")
-
-# # Request schema
-# class TextInput(BaseModel):
-#     text: str
-
-# @app.get("/", response_class=HTMLResponse)
-# async def serve_ui():
-#     return FileResponse("static/index.html")
-
-# @app.post("/predict")
-# async def predict_emotion(data: TextInput):
-#     text = data.text
-#     prediction = model.predict([text])[0]
-#     return {"emotion": prediction}
-
-
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse, JSONResponse
@@ -99,4 +67,5 @@ async def predict_emotion(data: TextInput):
         }
 
     except Exception as e:
+
         return JSONResponse({"error": f"Prediction failed: {str(e)}"}, status_code=500)
