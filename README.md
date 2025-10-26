@@ -62,9 +62,9 @@ uvicorn main:app --reload
 Currently, the app can be run locally using the setup steps above.
 
 ---
-## Demo Video (Mandatory)
+## Demo Video 
 **YouTube Link:**
-`https://youtu.be/5zeoV2fxh8Y`
+https://youtu.be/5zeoV2fxh8Y
 
 ---
 ## ✨ Features
